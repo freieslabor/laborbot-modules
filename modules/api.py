@@ -93,6 +93,7 @@ def closeLab(bot, trigger):
 
 @commands('room', 'door', 'status')
 def labStatus(bot, trigger):
+	"""Returns the lab door status."""
 	try:
 		response = api(bot, 'room')
 		since = datetime.fromtimestamp(response['since'])
