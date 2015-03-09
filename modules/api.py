@@ -5,6 +5,7 @@ Licensed under a Mozilla Public License 2.0.
 """
 from willie.module import commands
 import urllib, urllib2, json
+from datetime import datetime
 
 
 def configure(config):
@@ -88,6 +89,19 @@ def closeLab(bot, trigger):
 
 	except (urllib2.HTTPError, ApiException), e:
 		bot.say(apiError(e, "Couldn't set room status"))
+
+
+@commands('room', 'door', 'status')
+def labStatus(bot, trigger):
+	try:
+		response = api(bot, 'room')
+		since = datetime.fromtimestamp(response['since'])
+		sinceStr = since.strftime('%a, %H:%M')
+		statusStr = 'open' if response['open'] else 'closed'
+
+		bot.say('The door is %s since %s.' % (statusStr, sinceStr))
+	except urllib2.HTTPError, e:
+		bot.say(apiError(e, "Couldn't get room status"))
 
 
 class ApiException(Exception):
