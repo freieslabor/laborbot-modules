@@ -67,6 +67,10 @@ def getAslUpdates(bot):
 			for chan in bot.channels:
 				bot.msg(chan, message)
 
+			# change topic if room status changed
+			if item['service'] == 'sensor' and item['type'] == 'room':
+				bot.msg(chan, r'\topic Freies Labor Hildesheim - %s - https://freieslabor.org' % item['content'])
+
 		pickle.dump(lastId, open(bot.asl_filename, 'wb'))
 
 
