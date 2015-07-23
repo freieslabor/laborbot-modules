@@ -4,7 +4,8 @@ asl.py - Willie Freies Labor Activity Streams Lite Module
 Licensed under a Mozilla Public License 2.0.
 """
 from willie.module import commands, interval
-import urllib2, json, datetime, os, pickle
+import urllib2, json, os, pickle
+from datetime import datetime, timedelta
 
 ASL_QUERY = '-wiki.*&-sensor.traffic-light&-sensor.mate-o-meter&-twitter.retweet'
 
@@ -52,24 +53,30 @@ def getAslUpdates(bot):
 	"""Checks for new ASL messages and announces them."""
 	with open(bot.asl_filename) as f:
 		lastId = pickle.load(f)
-		for item in asl('%s&%s' % ("last_id=%d" % lastId, bot.config.asl.asl_query)):
+		query = '%s&%s' % ("last_id=%d" % lastId, bot.config.asl.asl_query)
+		for item in asl(query):
 			lastId = item['id'] if item['id'] > lastId else lastId
 
 			# ignore updates older than 90 minutes
-			date = datetime.datetime.strptime(item['datetime'], '%Y-%m-%d %H:%M:%S')
-			if date < datetime.datetime.now() - datetime.timedelta(minutes=90):
+			date = datetime.strptime(item['datetime'], '%Y-%m-%d %H:%M:%S')
+			if date < datetime.now() - timedelta(minutes=90):
 				continue
 
 			author = 'by %s ' % item['person'] if item['person'] else ''
-			message = '[%s] %s %s(%s)' % (item['service'].title(), item['content'], author, item['url'])
+			message = '[%s] %s %s(%s)' % \
+				(item['service'].title(), item['content'], author, item['url'])
 
 			# announce in all channels
 			for chan in bot.channels:
 				bot.msg(chan, message)
 
-			# change topic if room status changed
-			if item['service'] == 'sensor' and item['type'] == 'room':
-				bot.msg(chan, r'\topic Freies Labor Hildesheim - %s - https://freieslabor.org' % item['content'])
+				# change topic if room status changed
+				if item['service'] == 'sensor' and item['type'] == 'room':
+					since = date.strftime('%a, %H:%M')
+					status = "%s since %s" % (item['content'][:-1], since)
+					bot.msg('ChanServ', 'TOPIC %s Freies Labor ' % chan \
+						+ 'Hildesheim - %s - https://freieslabor.org' % \
+						status)
 
 		pickle.dump(lastId, open(bot.asl_filename, 'wb'))
 
